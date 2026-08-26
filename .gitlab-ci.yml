@@ -1,0 +1,24 @@
+stages:
+  - validate
+  - deploy
+
+image: node:20
+
+before_script:
+  - npm install -g @salesforce/cli
+  - echo "$SF_AUTH_URL_DEV1" > ./authfile
+  - sf org login sfdx-url -f ./authfile -a target-org -d
+
+validate:
+  stage: validate
+  script:
+    - sf project deploy validate -o target-org -d force-app -l RunLocalTests
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev1"'
+
+deploy:
+  stage: deploy
+  script:
+    - sf project deploy start -o target-org -d force-app -l RunLocalTests
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev1"'
